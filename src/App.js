@@ -1,12 +1,9 @@
-// src/App.js
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import Peer from 'simple-peer';
 import './App.css';
 
-// Main App component
 function App() {
-  // State variables
   const [name, setName] = useState('');
   const [joined, setJoined] = useState(false);
   const [users, setUsers] = useState([]);
@@ -24,17 +21,14 @@ function App() {
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
 
-  // Refs
   const socketRef = useRef();
   const localVideoRef = useRef();
   const remoteVideoRef = useRef();
   const peerRef = useRef();
   const localStreamRef = useRef();
 
-  // Connect to socket server on component mount
   useEffect(() => {
-    // Connect to the signaling server
-    const serverUrl =  'https://react-webrtc-video-call.onrender.com/';
+    const serverUrl = process.env.REACT_APP_SERVER_URL || 'http://localhost:5000';
     socketRef.current = io(serverUrl);
     
     setConnectionStatus('connecting');
@@ -49,7 +43,6 @@ function App() {
       setConnectionStatus('error');
     });
 
-    // Socket event handlers
     socketRef.current.on('all-users', (allUsers) => {
       console.log('All users:', allUsers);
       setUsers(allUsers);
@@ -64,7 +57,6 @@ function App() {
       console.log('User left:', userId);
       setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
       
-      // If in a call with the user who left, end the call
       if (callData && callData.from === userId) {
         handleEndCall('User disconnected');
       }
@@ -89,7 +81,6 @@ function App() {
       setCallStatus('connected');
       setRoomId(data.roomId);
       
-      // Add the remote stream to the peer connection
       peerRef.current.signal(data.signal);
     });
 
@@ -98,7 +89,6 @@ function App() {
       setCalling(false);
       setCallStatus(`Call failed: ${reason}`);
       
-      // Reset call status after a few seconds
       setTimeout(() => setCallStatus(''), 3000);
     });
 
@@ -107,7 +97,6 @@ function App() {
       setCalling(false);
       setCallStatus('Call declined');
       
-      // Reset call status after a few seconds
       setTimeout(() => setCallStatus(''), 3000);
     });
 
@@ -122,7 +111,6 @@ function App() {
       }
     });
 
-    // Cleanup function
     return () => {
       if (socketRef.current) {
         socketRef.current.disconnect();
@@ -136,7 +124,6 @@ function App() {
     };
   }, []);
 
-  // Get media stream when user joins
   const getMediaStream = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
@@ -160,30 +147,25 @@ function App() {
     }
   };
 
-  // Set local video stream when available
   useEffect(() => {
     if (stream && localVideoRef.current) {
       localVideoRef.current.srcObject = stream;
     }
   }, [stream]);
 
-  // Handle joining the room
   const joinRoom = async () => {
     if (!name) return alert('Please enter your name');
 
     const mediaStream = await getMediaStream();
     if (!mediaStream) return;
 
-    // Join the room
     socketRef.current.emit('join', { name });
     setJoined(true);
   };
 
-  // Function to call another user
   const callUser = async (userId) => {
     console.log('Calling user:', userId);
     
-    // Ensure we have a stream
     let currentStream = stream;
     if (!currentStream) {
       currentStream = await getMediaStream();
@@ -193,18 +175,15 @@ function App() {
     setCalling(true);
     setCallStatus('Calling...');
 
-    // Create a new peer connection (as initiator)
     const peer = new Peer({
       initiator: true,
       trickle: true,
       stream: currentStream
     });
 
-    // Handle peer events
     peer.on('signal', (signalData) => {
       console.log('Generated signal data (caller)');
       
-      // Send signal data to the user being called
       socketRef.current.emit('call-user', {
         userToCall: userId,
         signalData,
@@ -226,7 +205,6 @@ function App() {
       handleEndCall('Connection error');
     });
 
-    // Handle connection status
     peer.on('connect', () => {
       console.log('Peer connection established (caller)');
       setCallStatus('Connected');
@@ -240,11 +218,9 @@ function App() {
     peerRef.current = peer;
   };
 
-  // Function to answer an incoming call
   const answerCall = useCallback(async () => {
     console.log('Answering call');
     
-    // Ensure we have a stream
     let currentStream = stream;
     if (!currentStream) {
       currentStream = await getMediaStream();
@@ -255,18 +231,15 @@ function App() {
     setReceivingCall(false);
     setCallStatus('Connecting...');
 
-    // Create a new peer connection (not as initiator)
     const peer = new Peer({
       initiator: false,
       trickle: true,
       stream: currentStream
     });
 
-    // Handle peer events
     peer.on('signal', (signalData) => {
       console.log('Generated signal data (answerer)');
       
-      // Send signal data back to the caller
       socketRef.current.emit('answer-call', {
         signal: signalData,
         to: callData.from,
@@ -287,7 +260,6 @@ function App() {
       handleEndCall('Connection error');
     });
 
-    // Handle connection status
     peer.on('connect', () => {
       console.log('Peer connection established (answerer)');
       setCallStatus('Connected');
@@ -298,17 +270,14 @@ function App() {
       handleEndCall('Connection closed');
     });
 
-    // Signal to the peer with the caller's signal data
     peer.signal(callData.signal);
     peerRef.current = peer;
   }, [callData, stream, roomId]);
 
-  // Function to decline incoming call
   const declineCall = () => {
     setReceivingCall(false);
     setCaller('');
     
-    // Notify the caller that the call was declined
     if (callData) {
       socketRef.current.emit('decline-call', { from: callData.from });
     }
@@ -317,66 +286,54 @@ function App() {
     setRoomId(null);
   };
 
-  // Function to end the current call
-  // Function to end the current call
-const handleEndCall = (reason = 'Call ended') => {
-  console.log(reason);
+  const handleEndCall = (reason = 'Call ended') => {
+    console.log(reason);
 
-  setCallAccepted(false);
-  setCalling(false);
-  setReceivingCall(false);
-  setCaller('');
-  setCallData(null);
-  setCallStatus(reason);
+    setCallAccepted(false);
+    setCalling(false);
+    setReceivingCall(false);
+    setCaller('');
+    setCallData(null);
+    setCallStatus(reason);
 
-  // Notify the server that the call has ended
-  if (roomId) {
-    socketRef.current.emit('end-call', { roomId });
-    setRoomId(null);
-  }
-
-  // Stop screen sharing if active
-  if (isScreenSharing && screen) {
-    screen.getTracks().forEach(track => track.stop());
-    setScreen(null);
-    setIsScreenSharing(false);
-  }
-
-  // Safely close the peer connection without calling removeAllListeners
-  if (peerRef.current) {
-    try {
-      // Instead of removeAllListeners(), manually clean up the important events
-      // This avoids the error with process not being defined
-      const events = ['signal', 'connect', 'data', 'stream', 'track', 'error', 'close'];
-      
-      // For each known event type, remove listeners if the peer has an event emitter
-      if (peerRef.current._events) {
-        events.forEach(event => {
-          if (peerRef.current._events[event]) {
-            peerRef.current._events[event] = null;
-          }
-        });
-      }
-      
-      // Now safely destroy the peer
-      peerRef.current.destroy();
-    } catch (err) {
-      console.error('Error cleaning up peer:', err);
-    } finally {
-      peerRef.current = null;
+    if (roomId) {
+      socketRef.current.emit('end-call', { roomId });
+      setRoomId(null);
     }
-  }
 
-  // Reset remote video
-  if (remoteVideoRef.current) {
-    remoteVideoRef.current.srcObject = null;
-  }
+    if (isScreenSharing && screen) {
+      screen.getTracks().forEach(track => track.stop());
+      setScreen(null);
+      setIsScreenSharing(false);
+    }
 
-  // Reset call status after a few seconds
-  setTimeout(() => setCallStatus(''), 3000);
-};
+    if (peerRef.current) {
+      try {
+        const events = ['signal', 'connect', 'data', 'stream', 'track', 'error', 'close'];
+        
+        if (peerRef.current._events) {
+          events.forEach(event => {
+            if (peerRef.current._events[event]) {
+              peerRef.current._events[event] = null;
+            }
+          });
+        }
+        
+        peerRef.current.destroy();
+      } catch (err) {
+        console.error('Error cleaning up peer:', err);
+      } finally {
+        peerRef.current = null;
+      }
+    }
+
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = null;
+    }
+
+    setTimeout(() => setCallStatus(''), 3000);
+  };
   
-  // Toggle audio
   const toggleAudio = () => {
     if (stream) {
       stream.getAudioTracks().forEach(track => {
@@ -386,7 +343,6 @@ const handleEndCall = (reason = 'Call ended') => {
     }
   };
 
-  // Toggle video
   const toggleVideo = () => {
     if (stream) {
       stream.getVideoTracks().forEach(track => {
@@ -396,18 +352,15 @@ const handleEndCall = (reason = 'Call ended') => {
     }
   };
 
-  // Toggle screen sharing
   const toggleScreenShare = async () => {
     if (!isScreenSharing) {
       try {
-        // Get screen sharing stream
         const screenStream = await navigator.mediaDevices.getDisplayMedia({
           video: true
         });
         
         setScreen(screenStream);
         
-        // Replace video track in the peer connection
         if (peerRef.current) {
           const videoTrack = screenStream.getVideoTracks()[0];
           
@@ -418,14 +371,12 @@ const handleEndCall = (reason = 'Call ended') => {
             sender.replaceTrack(videoTrack);
           }
           
-          // Show screen share in local video
           if (localVideoRef.current) {
             localVideoRef.current.srcObject = screenStream;
           }
           
           setIsScreenSharing(true);
           
-          // Listen for the end of screen sharing
           videoTrack.onended = () => {
             stopScreenSharing();
           };
@@ -438,12 +389,10 @@ const handleEndCall = (reason = 'Call ended') => {
     }
   };
 
-  // Stop screen sharing
   const stopScreenSharing = () => {
     if (screen) {
       screen.getTracks().forEach(track => track.stop());
       
-      // Restore camera video track
       if (peerRef.current && stream) {
         const videoTrack = stream.getVideoTracks()[0];
         
@@ -454,7 +403,6 @@ const handleEndCall = (reason = 'Call ended') => {
           sender.replaceTrack(videoTrack);
         }
         
-        // Restore local video
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = stream;
         }
@@ -465,7 +413,6 @@ const handleEndCall = (reason = 'Call ended') => {
     }
   };
 
-  // Render the component
   return (
     <div className="app-container">
       <h1>WebRTC Video Chat</h1>

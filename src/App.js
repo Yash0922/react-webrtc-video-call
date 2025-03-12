@@ -34,7 +34,7 @@ function App() {
   // Connect to socket server on component mount
   useEffect(() => {
     // Connect to the signaling server
-    const serverUrl =  'http://localhost:5000';
+    const serverUrl =  'https://react-webrtc-video-call.onrender.com/';
     socketRef.current = io(serverUrl);
     
     setConnectionStatus('connecting');

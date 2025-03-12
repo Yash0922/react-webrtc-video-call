@@ -5,6 +5,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "buildServer": "npm install && npm run build",
     "server": "node server.js",
     "dev": "concurrently \"npm run server\" \"npm run start\""
   },

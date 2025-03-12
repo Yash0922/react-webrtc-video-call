@@ -27,7 +27,7 @@ app.use(express.static(path.join(__dirname, 'build')));
 // Always serve index.html for any GET request that isn't a file
 // This is needed for client-side routing in SPA
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+  res.send('Server is connected');
 });
 
 // Keep track of active users and rooms

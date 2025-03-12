@@ -1,70 +1,114 @@
-# Getting Started with Create React App
+# React WebRTC Video Call Application
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A simple video calling application built with React, WebRTC, and Socket.io that allows users to make peer-to-peer video calls.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- Real-time video calling
+- Peer-to-peer connection using WebRTC
+- User authentication with display names
+- List of online users
+- Incoming call notifications
+- Responsive design
 
-### `npm start`
+## Technology Stack
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- **Frontend**: React.js
+- **Backend**: Node.js with Express
+- **Real-time Communication**: Socket.io (signaling server)
+- **Peer Connection**: WebRTC (using simple-peer library)
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Project Structure
 
-### `npm test`
+```
+react-webrtc-video-call/
+├── public/
+│   └── index.html
+├── src/
+│   ├── App.js      # Main React component
+│   └── App.css     # Styling
+├── server.js       # Node.js signaling server
+└── package.json    # Project dependencies
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Setup Instructions
 
-### `npm run build`
+### Prerequisites
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- Node.js (v14 or higher)
+- NPM (v6 or higher)
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Installation
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+1. Clone the repository or download the project files
 
-### `npm run eject`
+2. Install dependencies:
+   ```
+   npm install
+   ```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+3. Start the development server and React app concurrently:
+   ```
+   npm run dev
+   ```
+   
+   This will start:
+   - The React app on http://localhost:3000
+   - The Socket.io signaling server on http://localhost:5000
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Building for Production
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+To create a production build:
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```
+npm run build
+```
 
-## Learn More
+## How It Works
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Signaling Process
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+1. **Connection**: Users connect to the signaling server via Socket.io
+2. **Discovery**: The server keeps track of connected users and broadcasts updates
+3. **Call Initiation**: When a user calls another user, the server relays the offer
+4. **Negotiation**: WebRTC connection parameters (SDP) are exchanged through the server
+5. **Connection**: Once negotiation is complete, video/audio streams flow directly between peers (P2P)
 
-### Code Splitting
+### WebRTC Flow
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+1. User A creates a peer connection as the initiator
+2. User A generates an offer and sends it to User B via the signaling server
+3. User B receives the offer and creates a peer connection (not as initiator)
+4. User B generates an answer and sends it back to User A
+5. Both peers exchange ICE candidates to establish the optimal connection path
+6. Once connected, media streams flow directly between peers without going through the server
 
-### Analyzing the Bundle Size
+## Performance Optimizations
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+- Uses WebRTC's peer-to-peer architecture to minimize server load
+- Implements proper cleanup of media streams and socket connections
+- Employs React hooks for efficient state management
+- Handles various edge cases like user disconnection and call rejection
 
-### Making a Progressive Web App
+## Browser Compatibility
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+This application works on modern browsers that support WebRTC:
+- Chrome (Desktop & Android)
+- Firefox (Desktop & Android)
+- Safari (Desktop & iOS)
+- Edge (Chromium-based)
 
-### Advanced Configuration
+## Known Limitations
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+- May not work behind symmetric NATs without TURN server implementation
+- Currently optimized for 1-to-1 video calls only (not group calls)
+- No persistent user accounts or call history
 
-### Deployment
+## Future Enhancements
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- Add TURN server support for improved NAT traversal
+- Implement screen sharing functionality
+- Add text chat capabilities
+- Support for group video calls
+- End-to-end encryption
+- Call recording options
